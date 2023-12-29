@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Main">
+      <UniqueIdentifier>{e1517d75-8dba-4d54-9184-b05414d4b18f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Network">
+      <UniqueIdentifier>{5533c2bd-fe0e-44d9-b157-ad472460d815}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Memory">
+      <UniqueIdentifier>{d4cfc322-efd2-40fc-a38d-8253d1a7fe97}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{37251af2-6310-4cc3-b9e3-0d61670c7779}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkAddress.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="RingBuffer.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="SocketUtil.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Profiler.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Frame.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="DateTime.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Packet.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="MemoryAllocator.cpp">
+      <Filter>Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="TextParser.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Main</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>Main</Filter>
+    </ClInclude>
+    <ClInclude Include="Types.h">
+      <Filter>Main</Filter>
+    </ClInclude>
+    <ClInclude Include="NetworkAddress.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="RingBuffer.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="SocketUtil.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectPool.h">
+      <Filter>Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="Profiler.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Frame.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="DateTime.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Packet.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Singleton.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Macro.h">
+      <Filter>Main</Filter>
+    </ClInclude>
+    <ClInclude Include="MemoryAllocator.h">
+      <Filter>Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="TextParser.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
