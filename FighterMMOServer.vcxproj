@@ -19,14 +19,22 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Character.cpp" />
     <ClCompile Include="DateTime.cpp" />
     <ClCompile Include="Frame.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MemoryAllocator.cpp" />
     <ClCompile Include="NetworkAddress.cpp" />
+    <ClCompile Include="NetworkManager.cpp" />
     <ClCompile Include="Packet.cpp" />
+    <ClCompile Include="PacketHandler.cpp" />
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
+    <ClCompile Include="Sector.cpp" />
+    <ClCompile Include="SectorManager.cpp" />
+    <ClCompile Include="Server.cpp" />
+    <ClCompile Include="Session.cpp" />
+    <ClCompile Include="SessionManager.cpp" />
     <ClCompile Include="SocketUtil.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -37,15 +45,25 @@
     <ClCompile Include="TextParser.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Action.h" />
+    <ClInclude Include="Character.h" />
     <ClInclude Include="DateTime.h" />
+    <ClInclude Include="Direction.h" />
     <ClInclude Include="Frame.h" />
     <ClInclude Include="Macro.h" />
     <ClInclude Include="MemoryAllocator.h" />
     <ClInclude Include="NetworkAddress.h" />
+    <ClInclude Include="NetworkManager.h" />
     <ClInclude Include="ObjectPool.h" />
     <ClInclude Include="Packet.h" />
+    <ClInclude Include="PacketHandler.h" />
     <ClInclude Include="Profiler.h" />
     <ClInclude Include="RingBuffer.h" />
+    <ClInclude Include="Sector.h" />
+    <ClInclude Include="SectorManager.h" />
+    <ClInclude Include="Server.h" />
+    <ClInclude Include="Session.h" />
+    <ClInclude Include="SessionManager.h" />
     <ClInclude Include="Singleton.h" />
     <ClInclude Include="SocketUtil.h" />
     <ClInclude Include="stdafx.h" />

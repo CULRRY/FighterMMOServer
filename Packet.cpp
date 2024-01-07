@@ -24,8 +24,16 @@ Packet::~Packet()
 
 void Packet::Clear()
 {
+
 	_readPos = 0;
 	_writePos = 0;
+
+	if (_hasHeader == true)
+	{
+		_buffer += sizeof(PacketHeader);
+	}
+
+	_hasHeader = false;
 }
 
 int32 Packet::MoveWritePos(int32 size)
