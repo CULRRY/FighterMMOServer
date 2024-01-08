@@ -31,7 +31,7 @@ void NetworkManager::Init()
 
 void NetworkManager::ProcessNetworkIO()
 {
-
+	throughPut++;
 	int32 cnt = 0;
 
 	auto iter = SessionManager::Begin();
@@ -53,6 +53,7 @@ void NetworkManager::ProcessNetworkIO()
 				break;
 
 			Session* session = *iter;
+
 			FD_SET(session->GetSock(), &rset);
 			FD_SET(session->GetSock(), &wset);
 			parts.push_back(session);
@@ -64,10 +65,12 @@ void NetworkManager::ProcessNetworkIO()
 
 		if (iter == SessionManager::End())
 		{
+			SessionManager::DisconnectAll();
 			return;
 		}
 	}
 
+	
 
 }
 
@@ -85,15 +88,40 @@ void NetworkManager::SelectSocket(list<Session*> sessionTable, FD_SET* readSet, 
 
 		for (Session* session : sessionTable)
 		{
+			if (session->IsDisconnect())
+			{
+				continue;
+			}
+
 			if (FD_ISSET(session->GetSock(), writeSet))
 			{
 				session->OnSend();
 			}
 		}
 
+		for (Session* session : sessionTable)
+		{
+			if (session->IsDisconnect())
+			{
+				continue;
+			}
+
+			uint64 now = timeGetTime();
+			if (now - session->GetTime() >= 30000)
+			{
+				SessionManager::ReserveDisconnect(session);
+			}
+
+		}
+
 
 		for (Session* session : sessionTable)
 		{
+			if (session->IsDisconnect())
+			{
+				continue;
+			}
+
 			if (FD_ISSET(session->GetSock(), readSet))
 			{
 				session->OnRecv();

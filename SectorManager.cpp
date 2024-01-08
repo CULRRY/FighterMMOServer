@@ -2,6 +2,8 @@
 #include "Packet.h"
 #include "SectorManager.h"
 
+#include "Direction.h"
+
 void SectorManager::Init()
 {
 	for (int y = 0; y < 6400 / Sector::HEIGHT; y++)
@@ -20,8 +22,6 @@ void SectorManager::SendSector(Sector* sector, Packet& pkt)
 
 void SectorManager::SendAround(Session* except, Sector* sector, Packet& pkt)
 {
-	static int32 dx[] = { 1, 1, 1, 0, 0, -1, -1, -1 };
-	static int32 dy[] = { 1, -1, 0, 1, -1, 1, -1, 0 };
 
 	sector->Broadcast(except, pkt);
 

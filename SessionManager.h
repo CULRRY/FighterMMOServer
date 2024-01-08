@@ -13,10 +13,11 @@ class SessionManager
 public:
 	static void Init();
 	static Session* Create(SOCKET sock, SOCKADDR_IN sockAddr);
-	static void Disconnect(Session* session);
+	static void ReserveDisconnect(Session* session);
 
 	static void SendUnicast(Session* session, Packet& pkt);
-
+	static void DisconnectAll();
+	static int32 Count() { return _sessionList.size(); }
 
 	static list<Session*>::iterator Begin() { return _sessionList.begin(); }
 	static list<Session*>::iterator End() { return _sessionList.end(); }

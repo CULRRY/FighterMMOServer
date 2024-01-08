@@ -32,8 +32,8 @@ Character::Character(Session* session)
 		dir = Direction::LL;
 	}
 
-	_x = 120;
-	_y = 120;
+	_x = randX;
+	_y = randY;
 	_action = Action::STOP;
 	_dir = dir;
 	_moveDir = dir;
@@ -42,19 +42,81 @@ Character::Character(Session* session)
 	_sector->Insert(this);
 }
 
-void Character::UpdateSector()
+bool Character::UpdateSector()
 {
+	if (_y >= 6400)
+	{
+		_y = 6399;
+	}
+
+	if (_x >= 6400)
+	{
+		_x = 6399;
+	}
+
 	Sector* newSector = SectorManager::GetSector(_y / Sector::HEIGHT, _x / Sector::WIDTH);
 
 	if (newSector == _sector)
-		return;
+		return false;
 
+
+	PROFILE_BEGIN(L"UpdateSector()");
 	vector<Sector*> newAdjacent;
 	vector<Sector*> newDelete;
 	newAdjacent.reserve(5);
 	newDelete.reserve(5);
 
-	switch (_moveDir)
+	int16 dy = newSector->GetY() - _sector->GetY();
+	int16 dx = newSector->GetX() - _sector->GetX();
+
+
+	Direction changeDir;
+
+	switch (dy)
+	{
+		using enum Direction;
+	case -1:
+		switch (dx)
+		{
+		case -1:
+			changeDir = LU;
+			break;
+		case 0:
+			changeDir = UU;
+			break;
+		case 1:
+			changeDir = RU;
+			break;
+		}
+		break;
+	case 0:
+		switch (dx)
+		{
+		case -1:
+			changeDir = LL;
+			break;
+		case 1:
+			changeDir = RR;
+			break;
+		}
+		break;
+	case 1:
+		switch (dx)
+		{
+		case -1:
+			changeDir = LD;
+			break;
+		case 0:
+			changeDir = DD;
+			break;
+		case 1:
+			changeDir = RD;
+			break;
+		}
+	}
+
+
+	switch (changeDir)
 	{
 		using enum Direction;
 	case LL:
@@ -230,18 +292,20 @@ void Character::UpdateSector()
 			SessionManager::SendUnicast(_session, pkt);
 		}
 	}
+
+	PROFILE_END(L"UpdateSector()");
+
+	return true;
 }
 
 void Character::Move()
 {
-	static int16 dx[] = { -6, -6, 0, 6, 6, 6, 0, -6 };
-	static int16 dy[] = { 0, -4, -4, -4, 0, 4, 4, 4 };
 
 	if (_action == Action::STOP)
 		return;
 
-	int16 nx = _x + dx[static_cast<int8>(_moveDir)];
-	int16 ny = _y + dy[static_cast<int8>(_moveDir)];
+	int16 nx = _x + dx[static_cast<int8>(_moveDir)] * 6;
+	int16 ny = _y + dy[static_cast<int8>(_moveDir)] * 4;
 
 	if (nx < Server::RANGE_MOVE_LEFT || nx > Server::RANGE_MOVE_RIGHT
 		|| ny < Server::RANGE_MOVE_TOP || ny > Server::RANGE_MOVE_BOTTOM)
@@ -251,6 +315,11 @@ void Character::Move()
 	_y = ny;
 
 	UpdateSector();
+
+	//if (_sessionId == 0)
+	//{
+	//	cout << _x << " " << _y << " " << (int32)_moveDir << endl;
+	//}
 	//cout << session->x << " " << session->y << endl;
 }
 

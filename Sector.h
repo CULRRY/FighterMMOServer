@@ -20,12 +20,21 @@ public:
 	void Move(Character* session, Sector* sector);
 	void Broadcast(Session* except, Packet& pkt);
 
-	int32 GetY() { return _y; }
-	int32 GetX() { return _x; }
+	unordered_map<uint32, Character*>::iterator Begin()
+	{
+		return _sessionList.begin();
+	}
+	unordered_map<uint32, Character*>::iterator End()
+	{
+		return _sessionList.end();
+	}
+
+	int16 GetY() { return _y; }
+	int16 GetX() { return _x; }
 
 private:
-	int32 _y;
-	int32 _x;
+	int16 _y;
+	int16 _x;
 	unordered_map<uint32, Character*> _sessionList;
 };
 

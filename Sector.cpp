@@ -33,7 +33,7 @@ void Sector::Broadcast(Session* except, Packet& pkt)
 
 		if (session->GetSendBuffer().GetFreeSize() < pkt.GetDataSize())
 		{
-			SessionManager::Disconnect(session);
+			SessionManager::ReserveDisconnect(session);
 			continue;
 		}
 

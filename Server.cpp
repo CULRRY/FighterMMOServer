@@ -12,23 +12,43 @@ void Server::Init()
 {
 	NetworkManager::Init();
 	SectorManager::Init();
+	
 }
 
 void Server::Run()
 {
 	_globalTime = timeGetTime();
+	_frameTime = timeGetTime();
 	while (shutDown)
 	{
-		NetworkManager::ProcessNetworkIO();
+		PROFILE_SAVE(VK_SHIFT);
 
+		if (timeGetTime() - _frameTime >= 1000)
+		{
+			cout << _frame << endl;
+			cout << SessionManager::Count() << endl;
+			cout << _characterMap.size() << endl;
+			cout << NetworkManager::throughPut << endl;
+
+			_frame = 0;
+			_frameTime += 1000;
+		}
+
+
+		PROFILE_BEGIN(L"IO");
+		NetworkManager::ProcessNetworkIO();
+		PROFILE_END(L"IO");
+
+		PROFILE_BEGIN(L"Logic");
 		Update();
+		PROFILE_END(L"Logic");
 	}
 
 }
 
 bool Server::OnAccept(Session* session)
 {
-	Character* newCharacter = new Character(session);
+	Character* newCharacter = _characterPool.Alloc(session);
 
 	_characterMap.insert({ session->GetId(), newCharacter });
 
@@ -57,28 +77,60 @@ bool Server::OnAccept(Session* session)
 
 	SectorManager::SendAround(newCharacter->GetSession(), newCharacter->GetSector(), pkt);
 
-	for (auto it = SessionManager::Begin(); it != SessionManager::End(); ++it)
-	{
-		Session* session = *it;
+	Sector* sector = newCharacter->GetSector();
 
-		if (newCharacter->GetSession() == session)
+	for (auto it = sector->Begin(); it != sector->End(); ++it)
+	{
+		Character* other = it->second;
+		if (newCharacter == other)
 		{
 			continue;
 		}
 
 		pkt.Clear();
 
-		Character* character = _characterMap.find(session->GetId())->second;
-
 		PacketHandler::Make_S_CREATE_OTHER_CHARACTER(
 			pkt,
-			character->GetSessionId(),
-			character->GetDir(),
-			character->GetX(),
-			character->GetY(),
-			character->GetHp()
+			other->GetSessionId(),
+			other->GetDir(),
+			other->GetX(),
+			other->GetY(),
+			other->GetHp()
 		);
 		SessionManager::SendUnicast(newCharacter->GetSession(), pkt);
+	}
+
+	for (int32 d = 0; d < 8; d++)
+	{
+		int32 ny = sector->GetY() + dy[d];
+		int32 nx = sector->GetX() + dx[d];
+
+		if (ny < 0 || ny >= 6400 / Sector::HEIGHT || nx < 0 || nx >= 6400 / Sector::WIDTH)
+		{
+			continue;
+		}
+		Sector* aroundSector = SectorManager::GetSector(ny, nx);
+
+		for (auto it = aroundSector->Begin(); it != aroundSector->End(); ++it)
+		{
+			Character* other = it->second;
+			if (newCharacter == other)
+			{
+				continue;
+			}
+
+			pkt.Clear();
+
+			PacketHandler::Make_S_CREATE_OTHER_CHARACTER(
+				pkt,
+				other->GetSessionId(),
+				other->GetDir(),
+				other->GetX(),
+				other->GetY(),
+				other->GetHp()
+			);
+			SessionManager::SendUnicast(newCharacter->GetSession(), pkt);
+		}
 	}
 
 	return true;
@@ -90,18 +142,55 @@ bool Server::Update()
 	if (timeGetTime() - _globalTime < 40)
 		return false;
 
+	_frame++;
 	for (auto it : _characterMap)
 	{
 		Character* character = it.second;
 
-		if (character->IsAlive())
+		if (character->IsAlive() == false)
 		{
-			SessionManager::Disconnect(character->GetSession());
+			SessionManager::ReserveDisconnect(character->GetSession());
 		}
 
 		character->Move();
+
+
 	}
 
 	_globalTime += 40;
+	return true;
+}
+
+
+void Server::DeleteCharacter(Session* session)
+{
+	auto item =_characterMap.find(session->GetId());
+	_characterPool.Free(item->second);
+
+	_characterMap.erase(session->GetId());
+}
+
+bool Server::IsAttackRange(Character* character, Character* target, int32 rangeX, int32 rangeY)
+{
+	if (target->GetY() < character->GetY() - rangeY || target->GetY() >= character->GetY() + rangeY)
+	{
+		return false;
+	}
+
+	if (character->GetDir() == Direction::LL)
+	{
+		if (target->GetX() > character->GetX() || target->GetX() <= character->GetX() - rangeX)
+		{
+			return false;
+		}
+	}
+	else
+	{
+		if (target->GetX() < character->GetX() || target->GetX() >= character->GetX() + rangeX)
+		{
+			return false;
+		}
+	}
+
 	return true;
 }

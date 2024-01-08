@@ -15,3 +15,5 @@ using namespace std;
 
 #include "Types.h"
 #include "Macro.h"
+#include "Profiler.h"
+#define PROFILE

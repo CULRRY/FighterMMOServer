@@ -2,8 +2,9 @@
 #include <map>
 
 #include "Session.h"
+#include "ObjectPool.h"
+#include "Character.h"
 
-class Character;
 class Session;
 
 class Server
@@ -43,9 +44,15 @@ public:
 			return it->second;
 		}
 	}
+	static void DeleteCharacter(Session* session);
 
 
+
+	static bool IsAttackRange(Character* character, Character* target, int32 rangeX, int32 rangeY);
 	inline static map<uint32, Character*> _characterMap;
+	inline static ObjectPool<Character> _characterPool{10000, true};
 	inline static uint32 _globalTime = 0;
+	inline static uint64 _frame = 0;
+	inline static uint64 _frameTime = 0;
 };
 

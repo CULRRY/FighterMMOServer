@@ -8,14 +8,29 @@ class Character
 {
 public:
 	
-
+	Character() = default;
 	Character(Session* session);
 
-	void UpdateSector();
+	bool UpdateSector();
 	void Move();
 	bool IsAlive()
 	{
 		if (_hp <= 0)
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	bool IsAllowableRange(int16 x, int16 y)
+	{
+		if (abs(_x - x) > 50)
+		{
+			return false;
+		}
+
+		if (abs(_y - y) > 50)
 		{
 			return false;
 		}
@@ -42,6 +57,11 @@ public:
 	int32 GetSessionId() const
 	{
 		return _sessionId;
+	}
+
+	Action GetAction()
+	{
+		return _action;
 	}
 
 	Direction& GetDir()
@@ -72,6 +92,11 @@ public:
 	uint8 GetHp() const
 	{
 		return _hp;
+	}
+
+	void Attack(Character* other, int8 damage)
+	{
+		other->_hp -= damage;
 	}
 
 private:

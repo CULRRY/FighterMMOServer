@@ -3,12 +3,15 @@
 #include "RingBuffer.h"
 #include "ObjectPool.h"
 #include "PacketHandler.h"
+#include "SessionManager.h"
 #include "SocketUtil.h"
 
 Session::Session(SOCKET sock, SOCKADDR_IN sockAddr)
-	: _sessionId(idGenerator++), _socket(sock), _netInfo(sockAddr), _recvBuffer(bufferPool.Alloc(4096)), _sendBuffer(bufferPool.Alloc(4096)), _lastRecvTime(0),
+	: _sessionId(idGenerator++), _socket(sock), _netInfo(sockAddr), _recvBuffer(bufferPool.Alloc(50000)), _sendBuffer(bufferPool.Alloc(50000)), _lastRecvTime(timeGetTime()),
 	_isReservedDisconnect(false)
 {
+	_sendBuffer->Clear();
+	_recvBuffer->Clear();
 }
 
 Session::~Session()
@@ -20,6 +23,7 @@ Session::~Session()
 
 bool Session::OnRecv()
 {
+
 	int32 recvResult = ::recv(
 		_socket,
 		reinterpret_cast<char*>(_recvBuffer->GetRearBufferPtr()),
@@ -29,7 +33,7 @@ bool Session::OnRecv()
 
 	if (recvResult == 0)
 	{
-		//Disconnect;
+		SessionManager::ReserveDisconnect(this);
 		return false;
 	}
 
@@ -37,16 +41,16 @@ bool Session::OnRecv()
 	{
 		if (WSAGetLastError() != WSAEWOULDBLOCK)
 		{
-			//Disconnect;
+			SessionManager::ReserveDisconnect(this);
 			return false;
 		}
 	}
 
 	_recvBuffer->MoveRear(recvResult);
 
-	while (PacketHandler::HandlePacket(this))
+	while (PacketHandler::HandlePacket(this)) {}
 
-		return true;
+	return true;
 }
 
 bool Session::OnSend()
@@ -62,8 +66,8 @@ bool Session::OnSend()
 	{
 		if (WSAGetLastError() != WSAEWOULDBLOCK)
 		{
-			cout << WSAGetLastError() << endl;
-			//Disconnect;
+		//	cout << WSAGetLastError() << endl;
+			SessionManager::ReserveDisconnect(this);
 		}
 	}
 

@@ -8,6 +8,7 @@
 #include "Packet.h"
 #include "SectorManager.h"
 #include "Server.h"
+#include "SessionManager.h"
 
 bool PacketHandler::HandlePacket(Session* session)
 {
@@ -21,7 +22,8 @@ bool PacketHandler::HandlePacket(Session* session)
 
 	if (header.code != 0x89)
 	{
-		//Server::Disconnect(session);
+		SessionManager::ReserveDisconnect(session);
+		return false;
 	}
 
 	if (session->GetRecvBuffer().GetUseSize() < header.size + sizeof(PacketHeader))
@@ -33,6 +35,9 @@ bool PacketHandler::HandlePacket(Session* session)
 	Packet pkt(header.size);
 	session->GetRecvBuffer().Dequeue(pkt.GetBufferPtr(), header.size);
 	pkt.MoveWritePos(header.size);
+
+	uint64 now = timeGetTime();
+	session->SetTime(now);
 
 	switch (header.type)
 	{
@@ -104,13 +109,14 @@ bool PacketHandler::HandlePacket(Session* session)
 bool PacketHandler::Handle_C_MOVE_START(Session* session, Direction& dir, int16 x, int16 y)
 {
 	Character* character = Server::FindCharacter(session);
+
+	if (character == nullptr)
+	{
+		return false;
+	}
+
 	character->SetAction(Action::MOVE);
 	character->GetMoveDir() = dir;
-
-	//if (Server::IsAlowableRange(session, x, y) == false)
-	//{
-	//	Server::Disconnect(session);
-	//}
 
 	switch (dir)
 	{
@@ -130,13 +136,33 @@ bool PacketHandler::Handle_C_MOVE_START(Session* session, Direction& dir, int16 
 		break;
 	}
 
-	character->SetPosition(y, x);
-	character->UpdateSector();
+	if (character->IsAllowableRange(x, y) == false)
+	{
+		Packet syncPkt;
+		PacketHandler::Make_S_SYNC(
+			syncPkt, 
+			character->GetSessionId(), 
+			character->GetX(), 
+			character->GetY()
+		);
+		SectorManager::SendAround(session, character->GetSector(), syncPkt);
+	}
+	else
+	{
+		character->SetPosition(y, x);
+	}
 
-	Packet sendPkt;
-	PacketHandler::Make_S_MOVE_START(sendPkt, session->GetId(), dir, x, y);
+	if (character->UpdateSector() == false)
+	{
+		Packet sendPkt;
+		PacketHandler::Make_S_MOVE_START(sendPkt, session->GetId(), dir, x, y);
+		SectorManager::SendAround(session, character->GetSector(), sendPkt);
+	}
 
-	SectorManager::SendAround(session, character->GetSector(), sendPkt);
+	//if (session->GetId() == 0)
+	//{
+	//	cout << "[START] " << x << " " << y << " " << (int32)dir << endl;
+	//}
 
 	return true;
 }
@@ -144,10 +170,31 @@ bool PacketHandler::Handle_C_MOVE_START(Session* session, Direction& dir, int16 
 bool PacketHandler::Handle_C_MOVE_STOP(Session* session, Direction& dir, int16 x, int16 y)
 {
 	Character* character = Server::FindCharacter(session);
-	character->SetAction(Action::STOP);
-	character->GetMoveDir() = dir;
 
-	character->SetPosition(y, x);
+	if (character == nullptr)
+	{
+		return false;
+	}
+
+	character->SetAction(Action::STOP);
+	character->GetDir() = dir;
+
+	if (character->IsAllowableRange(x, y) == false)
+	{
+		Packet syncPkt;
+		PacketHandler::Make_S_SYNC(
+			syncPkt,
+			character->GetSessionId(),
+			character->GetX(),
+			character->GetY()
+		);
+		SectorManager::SendAround(session, character->GetSector(), syncPkt);
+	}
+	else
+	{
+		character->SetPosition(y, x);
+	}
+
 	character->UpdateSector();
 
 	Packet sendPkt;
@@ -155,21 +202,200 @@ bool PacketHandler::Handle_C_MOVE_STOP(Session* session, Direction& dir, int16 x
 
 	SectorManager::SendAround(session, character->GetSector(), sendPkt);
 
+	//if (session->GetId() == 0)
+	//{
+	//	cout << "[STOP] " << x << " " << y << " " << (int32)dir << endl;
+	//}
+
+
 	return true;
 }
 
 bool PacketHandler::Handle_C_ATTACK1(Session* session, Direction& dir, int16 x, int16 y)
 {
+	Character* character = Server::FindCharacter(session);
+	if (character == nullptr)
+	{
+		return false;
+	}
+
+
+	if (character->GetAction() == Action::STOP || character->GetAction() == Action::MOVE)
+	{
+		if (character->IsAllowableRange(x, y) == false)
+		{
+			Packet syncPkt;
+			PacketHandler::Make_S_SYNC(
+				syncPkt,
+				character->GetSessionId(),
+				character->GetX(),
+				character->GetY()
+			);
+			SectorManager::SendAround(session, character->GetSector(), syncPkt);
+			character->UpdateSector();
+		}
+		else
+		{
+			character->SetPosition(y, x);
+		}
+
+		character->UpdateSector();
+		character->GetDir() = dir;
+		
+
+
+		Packet sendPkt;
+		PacketHandler::Make_S_ATTACK1(sendPkt, character->GetSessionId(), dir, x, y);
+		SectorManager::SendAround(character->GetSession(), character->GetSector(), sendPkt);
+
+		Sector* sector = character->GetSector();
+
+		for (auto it = sector->Begin(); it != sector->End(); ++it)
+		{
+			Character* other = it->second;
+			if (character == other)
+			{
+				continue;
+			}
+
+			int8 damage = 5;
+
+			if (Server::IsAttackRange(character, other, Server::ATTACK1_RANGE_X, Server::ATTACK1_RANGE_Y))
+			{
+				character->Attack(other, damage);
+
+				Packet damagePkt;
+				PacketHandler::Make_S_DAMAGE(damagePkt, character->GetSessionId(), other->GetSessionId(), other->GetHp());
+				SectorManager::SendAround(nullptr, character->GetSector(), damagePkt);
+			}
+		}
+
+	}
+
 	return true;
 }
 
 bool PacketHandler::Handle_C_ATTACK2(Session* session, Direction& dir, int16 x, int16 y)
 {
+	Character* character = Server::FindCharacter(session);
+	if (character == nullptr)
+	{
+		return false;
+	}
+
+	if (character->GetAction() == Action::STOP || character->GetAction() == Action::MOVE)
+	{
+		if (character->IsAllowableRange(x, y) == false)
+		{
+			Packet syncPkt;
+			PacketHandler::Make_S_SYNC(
+				syncPkt,
+				character->GetSessionId(),
+				character->GetX(),
+				character->GetY()
+			);
+			SectorManager::SendAround(session, character->GetSector(), syncPkt);
+			character->UpdateSector();
+		}
+		else
+		{
+			character->SetPosition(y, x);
+		}
+
+		character->UpdateSector();
+		character->GetDir() = dir;
+
+
+
+		Packet sendPkt;
+		PacketHandler::Make_S_ATTACK2(sendPkt, character->GetSessionId(), dir, x, y);
+		SectorManager::SendAround(character->GetSession(), character->GetSector(), sendPkt);
+
+		Sector* sector = character->GetSector();
+
+		for (auto it = sector->Begin(); it != sector->End(); ++it)
+		{
+			Character* other = it->second;
+			if (character == other)
+			{
+				continue;
+			}
+
+			int8 damage = 5;
+
+			if (Server::IsAttackRange(character, other, Server::ATTACK2_RANGE_X, Server::ATTACK2_RANGE_Y))
+			{
+				character->Attack(other, damage);
+
+				Packet damagePkt;
+				PacketHandler::Make_S_DAMAGE(damagePkt, character->GetSessionId(), other->GetSessionId(), other->GetHp());
+				SectorManager::SendAround(nullptr, character->GetSector(), damagePkt);
+			}
+		}
+
+	}
 	return true;
 }
 
 bool PacketHandler::Handle_C_ATTACK3(Session* session, Direction& dir, int16 x, int16 y)
 {
+	Character* character = Server::FindCharacter(session);
+	if (character == nullptr)
+	{
+		return false;
+	}
+
+	if (character->GetAction() == Action::STOP || character->GetAction() == Action::MOVE)
+	{
+		if (character->IsAllowableRange(x, y) == false)
+		{
+			Packet syncPkt;
+			PacketHandler::Make_S_SYNC(
+				syncPkt,
+				character->GetSessionId(),
+				character->GetX(),
+				character->GetY()
+			);
+			SectorManager::SendAround(session, character->GetSector(), syncPkt);
+			character->UpdateSector();
+		}
+		else
+		{
+			character->SetPosition(y, x);
+		}
+
+		character->UpdateSector();
+		character->GetDir() = dir;
+
+
+
+		Packet sendPkt;
+		PacketHandler::Make_S_ATTACK3(sendPkt, character->GetSessionId(), dir, x, y);
+		SectorManager::SendAround(character->GetSession(), character->GetSector(), sendPkt);
+
+		Sector* sector = character->GetSector();
+
+		for (auto it = sector->Begin(); it != sector->End(); ++it)
+		{
+			Character* other = it->second;
+			if (character == other)
+			{
+				continue;
+			}
+
+			int8 damage = 5;
+
+			if (Server::IsAttackRange(character, other, Server::ATTACK3_RANGE_X, Server::ATTACK3_RANGE_Y))
+			{
+				character->Attack(other, damage);
+
+				Packet damagePkt;
+				PacketHandler::Make_S_DAMAGE(damagePkt, character->GetSessionId(), other->GetSessionId(), other->GetHp());
+				SectorManager::SendAround(nullptr, character->GetSector(), damagePkt);
+			}
+		}
+
+	}
 	return true;
 }
 
@@ -177,6 +403,7 @@ bool PacketHandler::Handle_C_ECHO(Session* session, uint32 time)
 {
 	Packet pkt;
 	Make_S_ECHO(pkt, time);
+	SessionManager::SendUnicast(session, pkt);
 	return true;
 }
 

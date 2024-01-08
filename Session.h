@@ -6,7 +6,7 @@
 class Session
 {
 	inline static uint32 idGenerator = 0;
-	inline static ObjectPool<RingBuffer> bufferPool{5000, false};
+	inline static ObjectPool<RingBuffer> bufferPool{20000, false};
 public:
 	Session() = default;
 	Session(SOCKET sock, SOCKADDR_IN sockAddr);
@@ -16,10 +16,19 @@ public:
 	bool OnSend();
 	bool OnDisconnect();
 
+	bool IsDisconnect()
+	{
+		return _isReservedDisconnect;
+	}
+
 	uint32 GetId() { return _sessionId; }
 	SOCKET GetSock() { return _socket; }
 	RingBuffer& GetRecvBuffer(){ return *_recvBuffer; }
 	RingBuffer& GetSendBuffer(){ return *_sendBuffer; }
+
+	uint64 GetTime() { return _lastRecvTime; }
+	void SetTime(uint64 time) { _lastRecvTime = time; }
+
 
 private:
 	uint32			_sessionId;
