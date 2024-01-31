@@ -41,15 +41,15 @@ public:
 	//////////////////
 	/// MakePacket ///
 	//////////////////
-	static bool Make_S_CREATE_MY_CHARACTER(Packet& pkt, int32 id, Direction& dir, int16 x, int16 y, uint8 hp);
-	static bool Make_S_CREATE_OTHER_CHARACTER(Packet& pkt, int32 id, Direction& dir, int16 x, int16 y, uint8 hp);
+	static bool Make_S_CREATE_MY_CHARACTER(Packet& pkt, int32 id, Direction& dir, int16 x, int16 y, int8 hp);
+	static bool Make_S_CREATE_OTHER_CHARACTER(Packet& pkt, int32 id, Direction& dir, int16 x, int16 y, int8 hp);
 	static bool Make_S_DELETE_CHARACTER(Packet& pkt, int32 id);
 	static bool Make_S_MOVE_START(Packet& pkt, int32 id, Direction& dir, int16 x, int16 y);
 	static bool Make_S_MOVE_STOP(Packet& pkt, int32 id, Direction& dir, int16 x, int16 y);
 	static bool Make_S_ATTACK1(Packet& pkt, int32 id, Direction& dir, int16 x, int16 y);
 	static bool Make_S_ATTACK2(Packet& pkt, int32 id, Direction& dir, int16 x, int16 y);
 	static bool Make_S_ATTACK3(Packet& pkt, int32 id, Direction& dir, int16 x, int16 y);
-	static bool Make_S_DAMAGE(Packet& pkt, int32 attackId, int32 damageId, uint8 damageHp);
+	static bool Make_S_DAMAGE(Packet& pkt, int32 attackId, int32 damageId, int8 damageHp);
 	static bool Make_S_SYNC(Packet& pkt, int32 id, int16 x, int16 y);
 	static bool Make_S_ECHO(Packet& pkt, uint32 time);
 };

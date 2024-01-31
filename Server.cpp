@@ -3,6 +3,7 @@
 
 #include "Character.h"
 #include "Direction.h"
+#include "Log.h"
 #include "NetworkManager.h"
 #include "PacketHandler.h"
 #include "SectorManager.h"
@@ -10,38 +11,86 @@
 
 void Server::Init()
 {
+	wcout.imbue(locale("kor"));
+	timeBeginPeriod(1);
 	NetworkManager::Init();
 	SectorManager::Init();
-	
 }
 
 void Server::Run()
 {
+	Server::Init();
 	_globalTime = timeGetTime();
 	_frameTime = timeGetTime();
+	_logicTime = timeGetTime();
 	while (shutDown)
 	{
 		PROFILE_SAVE(VK_SHIFT);
 
+		_totalDeath += _deathCount;
+
 		if (timeGetTime() - _frameTime >= 1000)
 		{
-			cout << _frame << endl;
-			cout << SessionManager::Count() << endl;
-			cout << _characterMap.size() << endl;
-			cout << NetworkManager::throughPut << endl;
+			LOG_SYSTEM(
+				L"\n\
+FPS        : {:<4}\n\
+Sessions   : {:<4}\n\
+Characters : {:<4}\n\
+--------------------------\n\
+{:<4} accept     /sec\n\
+{:<4} disconnect /sec\n\
+{:<4} death      /sec | total : {}\n\
+{:<4} timeout    /sec\n\
+{:<4} packet     /sec\n\
+--------------------------\n\
+Network Time : {:<4} ms\n\
+Select  Time : {:<4} ms\n\
+Accept  Time : {:<4} ms\n\
+Recv    Time : {:<4} ms\n\
+Send    Time : {:<4} ms\n\
+Logic   Time : {:<4} ms\n\
+--------------------------\n\
+\n\n\n\n\n\n\
+",
+				_frame, 
+				SessionManager::Count(), 
+				_characterMap.size(), 
+				_acceptCount, 
+				SessionManager::disconnectCount,
+				_deathCount,
+				_totalDeath,
+				NetworkManager::timeOutCount,
+				NetworkManager::throughPut,
+				networkTime,
+				NetworkManager::selectTime,
+				NetworkManager::acceptTime,
+				NetworkManager::recvTime,
+				NetworkManager::sendTime,
+				_logicTime
+			);
 
 			_frame = 0;
 			_frameTime += 1000;
+			NetworkManager::throughPut = 0;
+			NetworkManager::timeOutCount = 0;
+			NetworkManager::selectTime = 0;
+			NetworkManager::acceptTime = 0;
+			NetworkManager::recvTime   = 0;
+			NetworkManager::sendTime   = 0;
+			_deathCount = 0;
+			_acceptCount = 0;
+			SessionManager::disconnectCount = 0;
+			_logicTime = 0;
+			networkTime = 0;
 		}
 
-
-		PROFILE_BEGIN(L"IO");
+		uint32 start = timeGetTime();
 		NetworkManager::ProcessNetworkIO();
-		PROFILE_END(L"IO");
+		networkTime += (timeGetTime() - start);
 
-		PROFILE_BEGIN(L"Logic");
+		
 		Update();
-		PROFILE_END(L"Logic");
+		SessionManager::DisconnectAll();
 	}
 
 }
@@ -139,8 +188,10 @@ bool Server::OnAccept(Session* session)
 
 bool Server::Update()
 {
-	if (timeGetTime() - _globalTime < 40)
+	uint32 timeDelay = timeGetTime() - _globalTime;
+	if (timeDelay < 40)
 		return false;
+	uint32 start = timeGetTime();
 
 	_frame++;
 	for (auto it : _characterMap)
@@ -149,15 +200,16 @@ bool Server::Update()
 
 		if (character->IsAlive() == false)
 		{
+			_deathCount++;
 			SessionManager::ReserveDisconnect(character->GetSession());
 		}
 
 		character->Move();
-
-
 	}
 
+	_logicTime += timeGetTime() - start;
 	_globalTime += 40;
+
 	return true;
 }
 

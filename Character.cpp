@@ -61,10 +61,8 @@ bool Character::UpdateSector()
 
 
 	PROFILE_BEGIN(L"UpdateSector()");
-	vector<Sector*> newAdjacent;
-	vector<Sector*> newDelete;
-	newAdjacent.reserve(5);
-	newDelete.reserve(5);
+	vector<Sector*>* newAdjacent = nullptr;
+	vector<Sector*>* newDelete = nullptr;
 
 	int16 dy = newSector->GetY() - _sector->GetY();
 	int16 dx = newSector->GetX() - _sector->GetX();
@@ -80,12 +78,18 @@ bool Character::UpdateSector()
 		{
 		case -1:
 			changeDir = LU;
+			newAdjacent = &newSector->LeftTop();
+			newDelete = &_sector->RightBottom();
 			break;
 		case 0:
 			changeDir = UU;
+			newAdjacent = &newSector->Top();
+			newDelete = &_sector->Bottom();
 			break;
 		case 1:
 			changeDir = RU;
+			newAdjacent = &newSector->RightTop();
+			newDelete = &_sector->LeftBottom();
 			break;
 		}
 		break;
@@ -94,9 +98,13 @@ bool Character::UpdateSector()
 		{
 		case -1:
 			changeDir = LL;
+			newAdjacent = &newSector->Left();
+			newDelete = &_sector->Right();
 			break;
 		case 1:
 			changeDir = RR;
+			newAdjacent = &newSector->Right();
+			newDelete = &_sector->Left();
 			break;
 		}
 		break;
@@ -105,109 +113,20 @@ bool Character::UpdateSector()
 		{
 		case -1:
 			changeDir = LD;
+			newAdjacent = &newSector->LeftBottom();
+			newDelete = &_sector->RightTop();
 			break;
 		case 0:
 			changeDir = DD;
+			newAdjacent = &newSector->Bottom();
+			newDelete = &_sector->Top();
 			break;
 		case 1:
 			changeDir = RD;
+			newAdjacent = &newSector->RightBottom();
+			newDelete = &_sector->LeftTop();
 			break;
 		}
-	}
-
-
-	switch (changeDir)
-	{
-		using enum Direction;
-	case LL:
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y, newSector->_x - 1));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y + 1, newSector->_x - 1));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y - 1, newSector->_x - 1));
-
-		newDelete.push_back(SectorManager::GetSector(_sector->_y, _sector->_x + 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y + 1, _sector->_x + 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y - 1, _sector->_x + 1));
-		break;
-	case LU: 
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y, newSector->_x - 1));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y + 1, newSector->_x - 1));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y - 1, newSector->_x - 1));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y - 1, newSector->_x));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y - 1, newSector->_x + 1));
-
-		newDelete.push_back(SectorManager::GetSector(_sector->_y, _sector->_x + 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y + 1, _sector->_x + 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y - 1, _sector->_x + 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y + 1, _sector->_x));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y + 1, _sector->_x - 1));
-		break;
-	case UU: 
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y - 1, newSector->_x));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y - 1, newSector->_x + 1));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y - 1, newSector->_x - 1));
-
-		newDelete.push_back(SectorManager::GetSector(_sector->_y + 1, _sector->_x - 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y + 1, _sector->_x + 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y + 1, _sector->_x));
-		break;
-	case RU: 
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y, newSector->_x + 1));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y + 1, newSector->_x + 1));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y - 1, newSector->_x + 1));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y - 1, newSector->_x));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y - 1, newSector->_x - 1));
-
-		newDelete.push_back(SectorManager::GetSector(_sector->_y, _sector->_x - 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y + 1, _sector->_x - 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y - 1, _sector->_x - 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y + 1, _sector->_x));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y + 1, _sector->_x + 1));
-		break;
-	case RR: 
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y, newSector->_x + 1));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y + 1, newSector->_x + 1));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y - 1, newSector->_x + 1));
-
-		newDelete.push_back(SectorManager::GetSector(_sector->_y, _sector->_x - 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y + 1, _sector->_x - 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y - 1, _sector->_x - 1));
-		break;
-	case RD: 
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y, newSector->_x + 1));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y + 1, newSector->_x + 1));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y - 1, newSector->_x + 1));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y + 1, newSector->_x));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y + 1, newSector->_x - 1));
-
-		newDelete.push_back(SectorManager::GetSector(_sector->_y, _sector->_x - 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y + 1, _sector->_x - 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y - 1, _sector->_x - 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y - 1, _sector->_x));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y - 1, _sector->_x + 1));
-		break;
-	case DD: 
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y + 1, newSector->_x));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y + 1, newSector->_x + 1));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y + 1, newSector->_x - 1));
-
-		newDelete.push_back(SectorManager::GetSector(_sector->_y - 1, _sector->_x - 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y - 1, _sector->_x + 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y - 1, _sector->_x));
-		break;
-	case LD: 
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y, newSector->_x - 1));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y + 1, newSector->_x - 1));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y - 1, newSector->_x - 1));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y + 1, newSector->_x));
-		newAdjacent.push_back(SectorManager::GetSector(newSector->_y + 1, newSector->_x + 1));
-
-		newDelete.push_back(SectorManager::GetSector(_sector->_y, _sector->_x + 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y + 1, _sector->_x + 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y - 1, _sector->_x + 1));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y - 1, _sector->_x));
-		newDelete.push_back(SectorManager::GetSector(_sector->_y - 1, _sector->_x - 1));
-		break;
-	default: ;
 	}
 
 	_sector->Delete(this);
@@ -215,7 +134,7 @@ bool Character::UpdateSector()
 
 	_sector = newSector;
 
-	for (Sector* sector : newAdjacent)
+	for (Sector* sector : *newAdjacent)
 	{
 		if (sector == nullptr)
 			continue;
@@ -271,7 +190,7 @@ bool Character::UpdateSector()
 		}
 	}
 
-	for (Sector* sector : newDelete)
+	for (Sector* sector : *newDelete)
 	{
 		if (sector == nullptr)
 			continue;

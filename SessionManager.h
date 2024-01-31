@@ -21,7 +21,7 @@ public:
 
 	static list<Session*>::iterator Begin() { return _sessionList.begin(); }
 	static list<Session*>::iterator End() { return _sessionList.end(); }
-
+	inline static int32 disconnectCount = 0;
 
 private:
 	inline static list<Session*> _sessionList;

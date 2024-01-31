@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include "Session.h"
+
+#include "Log.h"
+#include "NetworkManager.h"
 #include "RingBuffer.h"
 #include "ObjectPool.h"
 #include "PacketHandler.h"
@@ -41,6 +44,7 @@ bool Session::OnRecv()
 	{
 		if (WSAGetLastError() != WSAEWOULDBLOCK)
 		{
+			//LOG_ERROR(L"Recv Error : {}", WSAGetLastError());
 			SessionManager::ReserveDisconnect(this);
 			return false;
 		}
@@ -48,7 +52,10 @@ bool Session::OnRecv()
 
 	_recvBuffer->MoveRear(recvResult);
 
-	while (PacketHandler::HandlePacket(this)) {}
+	while (PacketHandler::HandlePacket(this))
+	{
+		NetworkManager::throughPut++;
+	}
 
 	return true;
 }
@@ -67,6 +74,7 @@ bool Session::OnSend()
 		if (WSAGetLastError() != WSAEWOULDBLOCK)
 		{
 		//	cout << WSAGetLastError() << endl;
+			//LOG_ERROR(L"Send Error : {}", WSAGetLastError());
 			SessionManager::ReserveDisconnect(this);
 		}
 	}

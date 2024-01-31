@@ -25,5 +25,5 @@ inline Packet& operator>>(Packet& pkt, Direction& dir)
 	return pkt;
 }
 
-inline extern int32 dx[] = { -1, -1, 0, 1, 1, 1, 0, -1 };
-inline extern int32 dy[] = { 0, -1, -1, -1, 0, 1, 1, 1 };
+inline extern int16 dx[] = { -1, -1, 0, 1, 1, 1, 0, -1 };
+inline extern int16 dy[] = { 0, -1, -1, -1, 0, 1, 1, 1 };

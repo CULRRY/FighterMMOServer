@@ -34,6 +34,7 @@ void SectorManager::SendAround(Session* except, Sector* sector, Packet& pkt)
 		{
 			continue;
 		}
+
 		_sectorArray[ny][nx].Broadcast(nullptr, pkt);
 	}
 }

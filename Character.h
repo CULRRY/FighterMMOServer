@@ -89,7 +89,7 @@ public:
 		return _sector;
 	}
 
-	uint8 GetHp() const
+	int8 GetHp() const
 	{
 		return _hp;
 	}
@@ -110,7 +110,7 @@ private:
 	int16		_y;
 	Sector*		_sector;
 
-	uint8		_hp;
+	int8		_hp;
 
 	
 };

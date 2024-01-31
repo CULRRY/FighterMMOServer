@@ -24,6 +24,9 @@ public:
 	static constexpr int32 ATTACK1_RANGE_Y = 10;
 	static constexpr int32 ATTACK2_RANGE_Y = 10;
 	static constexpr int32 ATTACK3_RANGE_Y = 20;
+	static constexpr int8 ATTACK1_DAMAGE = 1;
+	static constexpr int8 ATTACK2_DAMAGE = 2;
+	static constexpr int8 ATTACK3_DAMAGE = 3;
 	inline static int32 shutDown = true;
 	
 public:
@@ -46,13 +49,17 @@ public:
 	}
 	static void DeleteCharacter(Session* session);
 
-
+	inline static uint32 networkTime = 0;
 
 	static bool IsAttackRange(Character* character, Character* target, int32 rangeX, int32 rangeY);
 	inline static map<uint32, Character*> _characterMap;
 	inline static ObjectPool<Character> _characterPool{10000, true};
+	inline static int32 _acceptCount = 0;
+	inline static uint32 _logicTime = 0;
 	inline static uint32 _globalTime = 0;
 	inline static uint64 _frame = 0;
 	inline static uint64 _frameTime = 0;
+	inline static int32 _deathCount = 0;
+	inline static int32 _totalDeath = 0;
 };
 

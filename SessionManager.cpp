@@ -58,6 +58,7 @@ void SessionManager::DisconnectAll()
 		Session* session = *it;
 		if (session->IsDisconnect())
 		{
+			disconnectCount++;
 			sessionPool.Free(session);
 			it = _sessionList.erase(it);
 		}

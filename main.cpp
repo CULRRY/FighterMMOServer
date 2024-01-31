@@ -4,7 +4,5 @@
 
 int main()
 {
-	timeBeginPeriod(1);
-	Server::Init();
 	Server::Run();
 }

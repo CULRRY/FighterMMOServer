@@ -2,6 +2,7 @@
 #include "Direction.h"
 #include "PacketHandler.h"
 
+#include "Log.h"
 #include "Action.h"
 #include "Character.h"
 #include "Session.h"
@@ -23,6 +24,7 @@ bool PacketHandler::HandlePacket(Session* session)
 	if (header.code != 0x89)
 	{
 		SessionManager::ReserveDisconnect(session);
+		LOG_ERROR(L"Disconnect Invalid Packet Code : {}", header.code);
 		return false;
 	}
 
@@ -248,27 +250,59 @@ bool PacketHandler::Handle_C_ATTACK1(Session* session, Direction& dir, int16 x, 
 		PacketHandler::Make_S_ATTACK1(sendPkt, character->GetSessionId(), dir, x, y);
 		SectorManager::SendAround(character->GetSession(), character->GetSector(), sendPkt);
 
-		Sector* sector = character->GetSector();
+		Sector* nowSector = character->GetSector();
 
-		for (auto it = sector->Begin(); it != sector->End(); ++it)
+		vector<Sector*> attackSector;
+		attackSector.reserve(6);
+
+		attackSector.push_back(nowSector);
+		attackSector.push_back(SectorManager::GetSector(nowSector->GetY() - 1, nowSector->GetX()));
+		attackSector.push_back(SectorManager::GetSector(nowSector->GetY() + 1, nowSector->GetX()));
+
+		switch (character->GetDir())
 		{
-			Character* other = it->second;
-			if (character == other)
-			{
+			using enum Direction;
+		case RR:
+			attackSector.push_back(SectorManager::GetSector(nowSector->GetY() - 1, nowSector->GetX() + 1));
+			attackSector.push_back(SectorManager::GetSector(nowSector->GetY(), nowSector->GetX() + 1));
+			attackSector.push_back(SectorManager::GetSector(nowSector->GetY() + 1, nowSector->GetX() + 1));
+
+			break;
+		case LL:
+			attackSector.push_back(SectorManager::GetSector(nowSector->GetY() - 1, nowSector->GetX() - 1));
+			attackSector.push_back(SectorManager::GetSector(nowSector->GetY(), nowSector->GetX() - 1));
+			attackSector.push_back(SectorManager::GetSector(nowSector->GetY() + 1, nowSector->GetX() - 1));
+			
+			break;
+		}
+
+		for (Sector* sector : attackSector)
+		{
+			if (sector == nullptr)
 				continue;
-			}
 
-			int8 damage = 5;
-
-			if (Server::IsAttackRange(character, other, Server::ATTACK1_RANGE_X, Server::ATTACK1_RANGE_Y))
+			for (auto it = sector->Begin(); it != sector->End(); ++it)
 			{
-				character->Attack(other, damage);
+				Character* other = it->second;
+				if (character == other)
+				{
+					continue;
+				}
 
-				Packet damagePkt;
-				PacketHandler::Make_S_DAMAGE(damagePkt, character->GetSessionId(), other->GetSessionId(), other->GetHp());
-				SectorManager::SendAround(nullptr, character->GetSector(), damagePkt);
+				int8 damage = 5;
+
+				if (Server::IsAttackRange(character, other, Server::ATTACK1_RANGE_X, Server::ATTACK1_RANGE_Y))
+				{
+					character->Attack(other, Server::ATTACK1_DAMAGE);
+
+					Packet damagePkt;
+					PacketHandler::Make_S_DAMAGE(damagePkt, character->GetSessionId(), other->GetSessionId(), other->GetHp());
+					SectorManager::SendAround(nullptr, character->GetSector(), damagePkt);
+				}
 			}
 		}
+
+		
 
 	}
 
@@ -311,27 +345,58 @@ bool PacketHandler::Handle_C_ATTACK2(Session* session, Direction& dir, int16 x, 
 		PacketHandler::Make_S_ATTACK2(sendPkt, character->GetSessionId(), dir, x, y);
 		SectorManager::SendAround(character->GetSession(), character->GetSector(), sendPkt);
 
-		Sector* sector = character->GetSector();
+		Sector* nowSector = character->GetSector();
 
-		for (auto it = sector->Begin(); it != sector->End(); ++it)
+		vector<Sector*> attackSector;
+		attackSector.reserve(6);
+
+		attackSector.push_back(nowSector);
+		attackSector.push_back(SectorManager::GetSector(nowSector->GetY() - 1, nowSector->GetX()));
+		attackSector.push_back(SectorManager::GetSector(nowSector->GetY() + 1, nowSector->GetX()));
+
+		switch (character->GetDir())
 		{
-			Character* other = it->second;
-			if (character == other)
-			{
+			using enum Direction;
+		case RR:
+			attackSector.push_back(SectorManager::GetSector(nowSector->GetY() - 1, nowSector->GetX() + 1));
+			attackSector.push_back(SectorManager::GetSector(nowSector->GetY(), nowSector->GetX() + 1));
+			attackSector.push_back(SectorManager::GetSector(nowSector->GetY() + 1, nowSector->GetX() + 1));
+
+			break;
+		case LL:
+			attackSector.push_back(SectorManager::GetSector(nowSector->GetY() - 1, nowSector->GetX() - 1));
+			attackSector.push_back(SectorManager::GetSector(nowSector->GetY(), nowSector->GetX() - 1));
+			attackSector.push_back(SectorManager::GetSector(nowSector->GetY() + 1, nowSector->GetX() - 1));
+
+			break;
+		}
+
+		for (Sector* sector : attackSector)
+		{
+			if (sector == nullptr)
 				continue;
-			}
 
-			int8 damage = 5;
-
-			if (Server::IsAttackRange(character, other, Server::ATTACK2_RANGE_X, Server::ATTACK2_RANGE_Y))
+			for (auto it = sector->Begin(); it != sector->End(); ++it)
 			{
-				character->Attack(other, damage);
+				Character* other = it->second;
+				if (character == other)
+				{
+					continue;
+				}
 
-				Packet damagePkt;
-				PacketHandler::Make_S_DAMAGE(damagePkt, character->GetSessionId(), other->GetSessionId(), other->GetHp());
-				SectorManager::SendAround(nullptr, character->GetSector(), damagePkt);
+				int8 damage = 5;
+
+				if (Server::IsAttackRange(character, other, Server::ATTACK2_RANGE_X, Server::ATTACK2_RANGE_Y))
+				{
+					character->Attack(other, Server::ATTACK2_DAMAGE);
+
+					Packet damagePkt;
+					PacketHandler::Make_S_DAMAGE(damagePkt, character->GetSessionId(), other->GetSessionId(), other->GetHp());
+					SectorManager::SendAround(nullptr, character->GetSector(), damagePkt);
+				}
 			}
 		}
+
 
 	}
 	return true;
@@ -373,28 +438,56 @@ bool PacketHandler::Handle_C_ATTACK3(Session* session, Direction& dir, int16 x, 
 		PacketHandler::Make_S_ATTACK3(sendPkt, character->GetSessionId(), dir, x, y);
 		SectorManager::SendAround(character->GetSession(), character->GetSector(), sendPkt);
 
-		Sector* sector = character->GetSector();
+		Sector* nowSector = character->GetSector();
 
-		for (auto it = sector->Begin(); it != sector->End(); ++it)
+		vector<Sector*> attackSector;
+		attackSector.reserve(6);
+
+		attackSector.push_back(nowSector);
+		attackSector.push_back(SectorManager::GetSector(nowSector->GetY() - 1, nowSector->GetX()));
+		attackSector.push_back(SectorManager::GetSector(nowSector->GetY() + 1, nowSector->GetX()));
+
+		switch (character->GetDir())
 		{
-			Character* other = it->second;
-			if (character == other)
-			{
-				continue;
-			}
+			using enum Direction;
+		case RR:
+			attackSector.push_back(SectorManager::GetSector(nowSector->GetY() - 1, nowSector->GetX() + 1));
+			attackSector.push_back(SectorManager::GetSector(nowSector->GetY(), nowSector->GetX() + 1));
+			attackSector.push_back(SectorManager::GetSector(nowSector->GetY() + 1, nowSector->GetX() + 1));
 
-			int8 damage = 5;
+			break;
+		case LL:
+			attackSector.push_back(SectorManager::GetSector(nowSector->GetY() - 1, nowSector->GetX() - 1));
+			attackSector.push_back(SectorManager::GetSector(nowSector->GetY(), nowSector->GetX() - 1));
+			attackSector.push_back(SectorManager::GetSector(nowSector->GetY() + 1, nowSector->GetX() - 1));
 
-			if (Server::IsAttackRange(character, other, Server::ATTACK3_RANGE_X, Server::ATTACK3_RANGE_Y))
-			{
-				character->Attack(other, damage);
-
-				Packet damagePkt;
-				PacketHandler::Make_S_DAMAGE(damagePkt, character->GetSessionId(), other->GetSessionId(), other->GetHp());
-				SectorManager::SendAround(nullptr, character->GetSector(), damagePkt);
-			}
+			break;
 		}
 
+		for (Sector* sector : attackSector)
+		{
+			if (sector == nullptr)
+				continue;
+
+			for (auto it = sector->Begin(); it != sector->End(); ++it)
+			{
+				Character* other = it->second;
+				if (character == other)
+				{
+					continue;
+				}
+
+
+				if (Server::IsAttackRange(character, other, Server::ATTACK3_RANGE_X, Server::ATTACK3_RANGE_Y))
+				{
+					character->Attack(other, Server::ATTACK3_DAMAGE);
+
+					Packet damagePkt;
+					PacketHandler::Make_S_DAMAGE(damagePkt, character->GetSessionId(), other->GetSessionId(), other->GetHp());
+					SectorManager::SendAround(nullptr, character->GetSector(), damagePkt);
+				}
+			}
+		}
 	}
 	return true;
 }
@@ -407,14 +500,14 @@ bool PacketHandler::Handle_C_ECHO(Session* session, uint32 time)
 	return true;
 }
 
-bool PacketHandler::Make_S_CREATE_MY_CHARACTER(Packet& pkt, int32 id, Direction& dir, int16 x, int16 y, uint8 hp)
+bool PacketHandler::Make_S_CREATE_MY_CHARACTER(Packet& pkt, int32 id, Direction& dir, int16 x, int16 y, int8 hp)
 {
 	pkt << id << dir << x << y << hp;
 	pkt.MakeHeader(PacketType::S_CREATE_MY_CHARACTER);
 	return true;
 }
 
-bool PacketHandler::Make_S_CREATE_OTHER_CHARACTER(Packet& pkt, int32 id, Direction& dir, int16 x, int16 y, uint8 hp)
+bool PacketHandler::Make_S_CREATE_OTHER_CHARACTER(Packet& pkt, int32 id, Direction& dir, int16 x, int16 y, int8 hp)
 {
 	pkt << id << dir << x << y << hp;
 	pkt.MakeHeader(PacketType::S_CREATE_OTHER_CHARACTER);
@@ -463,7 +556,7 @@ bool PacketHandler::Make_S_ATTACK3(Packet& pkt, int32 id, Direction& dir, int16 
 	return true;
 }
 
-bool PacketHandler::Make_S_DAMAGE(Packet& pkt, int32 attackId, int32 damageId, uint8 damageHp)
+bool PacketHandler::Make_S_DAMAGE(Packet& pkt, int32 attackId, int32 damageId, int8 damageHp)
 {
 	pkt << attackId << damageId << damageHp;
 	pkt.MakeHeader(PacketType::S_DAMAGE);
